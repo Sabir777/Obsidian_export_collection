@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+import os
 import shutil
 from collections import deque
 
@@ -31,25 +32,19 @@ class ExportCollection:
         pattern2 = r'(?<=\!\[\[)[^.]+\.\w+(?=\]\])'  # без групп
         return re.findall(pattern1, content) + re.findall(pattern2, content)
 
-# Поиск файлов-картинок в хранилище
-    @staticmethod
-    def find_file_path(name_file):  # метод возвращает путь
-        def find_path(folder):  # рекурсивный обход файлов и папок
-            for p in folder.iterdir():
-                if p.name == name_file:
-                    return p
-                if p.is_dir():
-                    res = find_path(p)
-                    if res:
-                        return res
-            return None
-        return find_path(Path.cwd())
 
 # Копирование картинок в папку назначения
     def copy_pictures(self, target):
-        res = [path for name in self.pictures if (path := self.find_file_path(name))]
-        for file_path in res:
-            shutil.copy(file_path, target)
+        list_copy = []
+        for path, _, files in os.walk(Path.cwd()):  # текущая директория
+            path_cwd = Path(path)
+            for file in self.pictures:
+                if file not in list_copy and file in files:
+                    shutil.copy(path_cwd / file, target)
+                    list_copy.append(file)
+                    if len(list_copy) == len(self.pictures):
+                        return None
+
 
 # Получить список файлов из заметки:
 # Будут учитываться только те ссылки которые не находятся в заголовке заметки
